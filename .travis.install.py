@@ -98,7 +98,7 @@ def install_lazarus_version(ver,rel,env):
         process_file = lambda f: (not f.endswith('.dmg')) or install_osx_dmg(f)
     elif osn == 'windows':
         # Install all .exe files
-        process_file = lambda f: (not f.endswith('.exe')) or os.system('powershell %s /VERYSILENT /DIR="c:\\lazarus"' % (f)) == 0
+        process_file = lambda f: (not f.endswith('.exe')) or os.system('cmd %s /VERYSILENT /DIR="c:\\lazarus"' % (f)) == 0
     else:
         return False
 
@@ -108,7 +108,7 @@ def install_lazarus_version(ver,rel,env):
 
     if osn == 'windows':
         # Set windows Path (persistently) to include Lazarus binary directory
-        if os.system('powershell cmd /C reg add HKEY_CURRENT_USER\\Environment /v PATH /t REG_SZ /d "%PATH%\\;c:\\lazarus" /f') != 0:
+        if os.system('cmd /C reg add HKEY_CURRENT_USER\\Environment /v PATH /t REG_SZ /d "%PATH%\\;c:\\lazarus" /f') != 0:
             return False
 
     elif osn == 'wine':
