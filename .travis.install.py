@@ -98,7 +98,7 @@ def install_lazarus_version(ver,rel,env):
         process_file = lambda f: (not f.endswith('.dmg')) or install_osx_dmg(f)
     elif osn == 'windows':
         # Install all .exe files
-        process_file = lambda f: (not f.endswith('.exe')) or os.system('cmd %s /VERYSILENT /DIR="c:\\lazarus"' % (f)) == 0
+        process_file = lambda f: (not f.endswith('.exe')) or os.system('powershell cmd %s /VERYSILENT /DIR="c:\\lazarus"' % (f)) == 0
     else:
         return False
 
