@@ -106,12 +106,10 @@ def install_lazarus_version(ver,rel,env):
     if not all(map(lambda f: process_file(os.path.join(LAZ_TMP_DIR, f)), sorted(os.listdir(LAZ_TMP_DIR)))):
         return False
 
-    if osn == 'windows':
-        # Set windows Path (persistently) to include Lazarus binary directory
-        if os.system('cmd /C reg add HKEY_CURRENT_USER\\Environment /v PATH /t REG_SZ /d "%PATH%\\;c:\\lazarus" /f') != 0:
-            print(os.system('cmd /C reg add HKEY_CURRENT_USER\\Environment /v PATH /t REG_SZ /d "%PATH%\\;c:\\lazarus" /f') != 0)
-            print('cmd /C reg add HKEY_CURRENT_USER\\Environment /v PATH /t REG_SZ /d "%PATH%\\;c:\\lazarus" /f')
-            return False
+    # if osn == 'windows':
+    #     # Set windows Path (persistently) to include Lazarus binary directory
+    #     if os.system('cmd /C reg add HKEY_CURRENT_USER\\Environment /v PATH /t REG_SZ /d "%PATH%\\;c:\\lazarus" /f') != 0:
+    #         return False
 
     elif osn == 'wine':
         # Set wine Path (persistently) to include Lazarus binary directory
