@@ -58,7 +58,7 @@ before_install:
 
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then
           choco install python;
-          choco refreshenv;
+          refreshenv
     fi
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
