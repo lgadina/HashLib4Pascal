@@ -7,17 +7,18 @@ import os
 import subprocess
 
 OS_NAME=os.environ.get('TRAVIS_OS_NAME') or 'linux'
-OS_PMAN={'linux': 'sudo apt-get', 'osx': 'brew'}[OS_NAME]
+OS_PMAN={'linux': 'sudo apt-get', 'osx': 'brew', 'windows': 'choco'}[OS_NAME]
 
 LAZ_TMP_DIR=os.environ.get('LAZ_TMP_DIR') or 'lazarus_tmp'
-LAZ_REL_DEF=os.environ.get('LAZ_REL_DEF') or {'linux':'amd64', 'qemu-arm':'amd64', 'qemu-arm-static':'amd64', 'osx':'i386', 'wine':'32'}
+LAZ_REL_DEF=os.environ.get('LAZ_REL_DEF') or {'linux':'amd64', 'qemu-arm':'amd64', 'qemu-arm-static':'amd64', 'osx':'i386', 'wine':'32', 'windows':'64'}
 LAZ_BIN_SRC=os.environ.get('LAZ_BIN_SRC') or 'http://mirrors.iwi.me/lazarus/releases/%(target)s/Lazarus%%20%(version)s'
 LAZ_BIN_TGT=os.environ.get('LAZ_BIN_TGT') or {
     'linux':           'Lazarus%%20Linux%%20%(release)s%%20DEB',
     'qemu-arm':        'Lazarus%%20Linux%%20%(release)s%%20DEB',
     'qemu-arm-static': 'Lazarus%%20Linux%%20%(release)s%%20DEB',
     'osx':             'Lazarus%%20Mac%%20OS%%20X%%20%(release)s',
-    'wine':            'Lazarus%%20Windows%%20%(release)s%%20bits'
+    'wine':            'Lazarus%%20Windows%%20%(release)s%%20bits',
+    'windows':            'Lazarus%%20Windows%%20%(release)s%%20bits'
 }
 
 def install_osx_dmg(dmg):
@@ -48,6 +49,9 @@ def install_lazarus_default():
     elif OS_NAME == 'osx':
         # Install brew cask first
         pkg = 'fpc caskroom/cask/brew-cask && %s cask install fpcsrc lazarus' % (OS_PMAN)
+    elif OS_NAME == 'windows':
+        # Install brew cask first
+        pkg = 'lazarus'
     else:
         # Default to lazarus
         pkg = 'lazarus'
@@ -92,6 +96,9 @@ def install_lazarus_version(ver,rel,env):
     elif osn == 'osx':
         # Install all .dmg files
         process_file = lambda f: (not f.endswith('.dmg')) or install_osx_dmg(f)
+    elif osn == 'windows':
+        # Install all .exe files
+        process_file = lambda f: (not f.endswith('.exe')) or os.system('powershell %s /VERYSILENT /DIR="c:\\lazarus"' % (f)) == 0
     else:
         return False
 
@@ -99,7 +106,12 @@ def install_lazarus_version(ver,rel,env):
     if not all(map(lambda f: process_file(os.path.join(LAZ_TMP_DIR, f)), sorted(os.listdir(LAZ_TMP_DIR)))):
         return False
 
-    if osn == 'wine':
+    if osn == 'windows':
+        # Set windows Path (persistently) to include Lazarus binary directory
+        if os.system('powershell cmd /C reg add HKEY_CURRENT_USER\\\\Environment /v PATH /t REG_SZ /d "%PATH%\\;c:\\\\lazarus"') != 0:
+            return False
+
+    elif osn == 'wine':
         # Set wine Path (persistently) to include Lazarus binary directory
         if os.system('wine cmd /C reg add HKEY_CURRENT_USER\\\\Environment /v PATH /t REG_SZ /d "%PATH%\\;c:\\\\lazarus"') != 0:
             return False
