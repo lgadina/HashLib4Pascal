@@ -91,6 +91,7 @@ uses
   HlpBlake2SParams,
   HlpBlake2BP,
   HlpBlake2SP,
+  HlpBlake3,
   // HMAC Unit
   HlpHMACNotBuildInAdapter,
   // PBKDF2_HMAC Unit
@@ -413,6 +414,9 @@ type
       class function CreateBlake2SP(AHashSize: Int32;
         const AKey: THashLibByteArray): IHash; static;
 
+      class function CreateBlake3_256(const AKey: THashLibByteArray)
+        : IHash; static;
+
     end;
 
     // ====================== TXOF ====================== //
@@ -453,6 +457,9 @@ type
 
       class function CreateKMAC256XOF(const AKMACKey, ACustomization
         : THashLibByteArray; AXofSizeInBits: UInt64): IHash; static;
+
+      class function CreateBlake3XOF(const AKey: THashLibByteArray;
+        AXofSizeInBits: UInt64): IHash; overload; static;
 
     end;
 
@@ -1166,25 +1173,25 @@ end;
 class function THashFactory.TCrypto.CreateBlake2B_160: IHash;
 begin
   Result := THashFactory.TCrypto.CreateBlake2B
-    (TBlake2BConfig.Create(THashSize.hsHashSize160));
+    (TBlake2BConfig.Create(THashSize.hsHashSize160) as IBlake2BConfig);
 end;
 
 class function THashFactory.TCrypto.CreateBlake2B_256: IHash;
 begin
   Result := THashFactory.TCrypto.CreateBlake2B
-    (TBlake2BConfig.Create(THashSize.hsHashSize256));
+    (TBlake2BConfig.Create(THashSize.hsHashSize256) as IBlake2BConfig);
 end;
 
 class function THashFactory.TCrypto.CreateBlake2B_384: IHash;
 begin
   Result := THashFactory.TCrypto.CreateBlake2B
-    (TBlake2BConfig.Create(THashSize.hsHashSize384));
+    (TBlake2BConfig.Create(THashSize.hsHashSize384) as IBlake2BConfig);
 end;
 
 class function THashFactory.TCrypto.CreateBlake2B_512: IHash;
 begin
   Result := THashFactory.TCrypto.CreateBlake2B
-    (TBlake2BConfig.Create(THashSize.hsHashSize512));
+    (TBlake2BConfig.Create(THashSize.hsHashSize512) as IBlake2BConfig);
 end;
 
 class function THashFactory.TCrypto.CreateBlake2S(const AConfig: IBlake2SConfig;
@@ -1203,25 +1210,25 @@ end;
 class function THashFactory.TCrypto.CreateBlake2S_128: IHash;
 begin
   Result := THashFactory.TCrypto.CreateBlake2S
-    (TBlake2SConfig.Create(THashSize.hsHashSize128));
+    (TBlake2SConfig.Create(THashSize.hsHashSize128) as IBlake2SConfig);
 end;
 
 class function THashFactory.TCrypto.CreateBlake2S_160: IHash;
 begin
   Result := THashFactory.TCrypto.CreateBlake2S
-    (TBlake2SConfig.Create(THashSize.hsHashSize160));
+    (TBlake2SConfig.Create(THashSize.hsHashSize160) as IBlake2SConfig);
 end;
 
 class function THashFactory.TCrypto.CreateBlake2S_224: IHash;
 begin
   Result := THashFactory.TCrypto.CreateBlake2S
-    (TBlake2SConfig.Create(THashSize.hsHashSize224));
+    (TBlake2SConfig.Create(THashSize.hsHashSize224) as IBlake2SConfig);
 end;
 
 class function THashFactory.TCrypto.CreateBlake2S_256: IHash;
 begin
   Result := THashFactory.TCrypto.CreateBlake2S
-    (TBlake2SConfig.Create(THashSize.hsHashSize256));
+    (TBlake2SConfig.Create(THashSize.hsHashSize256) as IBlake2SConfig);
 end;
 
 class function THashFactory.TCrypto.CreateBlake2BP(AHashSize: Int32;
@@ -1234,6 +1241,12 @@ class function THashFactory.TCrypto.CreateBlake2SP(AHashSize: Int32;
   const AKey: THashLibByteArray): IHash;
 begin
   Result := TBlake2SP.Create(AHashSize, AKey);
+end;
+
+class function THashFactory.TCrypto.CreateBlake3_256
+  (const AKey: THashLibByteArray): IHash;
+begin
+  Result := TBlake3.Create(THashSize.hsHashSize256, AKey);
 end;
 
 class function THashFactory.TCrypto.CreateSnefru(ASecurityLevel: Int32;
@@ -1458,6 +1471,16 @@ begin
   LConfig.Key := AKey;
   Result := CreateBlake2XB(TBlake2XBConfig.Create(LConfig, Nil),
     AXofSizeInBits);
+end;
+
+class function THashFactory.TXOF.CreateBlake3XOF(const AKey: THashLibByteArray;
+  AXofSizeInBits: UInt64): IHash;
+var
+  LXof: IXOF;
+begin
+  LXof := (TBlake3XOF.Create(32, AKey) as IXOF);
+  LXof.XOFSizeInBits := AXofSizeInBits;
+  Result := LXof as IHash;
 end;
 
 class function THashFactory.TXOF.CreateKMAC128XOF(const AKMACKey,

@@ -171,7 +171,7 @@ type
   strict protected
   var
     FBlake2XBConfig: TBlake2XBConfig;
-    FDigestPosition, FBlockPosition: UInt64;
+    FDigestPosition: UInt64;
     FRootConfig, FOutputConfig: TBlake2XBConfig;
     FRootHashDigest, FBlake2XBBuffer: THashLibByteArray;
     FFinalized: Boolean;
@@ -2055,7 +2055,6 @@ begin
   LHashInstance := LXof as TBlake2XB;
   LHashInstance.FBlake2XBConfig := FBlake2XBConfig.Clone();
   LHashInstance.FDigestPosition := FDigestPosition;
-  LHashInstance.FBlockPosition := FBlockPosition;
   LHashInstance.FRootConfig := FRootConfig.Clone();
   LHashInstance.FOutputConfig := FOutputConfig.Clone();
   LHashInstance.FRootHashDigest := System.Copy(FRootHashDigest);
@@ -2148,7 +2147,6 @@ begin
     (LXofSizeInBytes);
 
   FRootHashDigest := Nil;
-  FBlockPosition := 0;
   FDigestPosition := 0;
   FFinalized := False;
   TArrayUtils.ZeroFill(FBlake2XBBuffer);
@@ -2158,7 +2156,7 @@ end;
 procedure TBlake2XB.DoOutput(const ADestination: THashLibByteArray;
   ADestinationOffset, AOutputLength: UInt64);
 var
-  LDestinationOffset, LOutputLength, LDiff, LCount, LBlockOffset: UInt64;
+  LDiff, LCount, LBlockOffset: UInt64;
 begin
 
   if (UInt64(System.Length(ADestination)) - ADestinationOffset) < AOutputLength
@@ -2175,7 +2173,7 @@ begin
         (@SOutputLengthInvalid);
     end;
   end
-  else if ((FBlockPosition shl 5) >= UnknownMaxDigestLengthInBytes) then
+  else if (FDigestPosition = UnknownMaxDigestLengthInBytes) then
   begin
     raise EArgumentOutOfRangeHashLibException.CreateRes
       (@SMaximumOutputLengthExceeded);
@@ -2187,9 +2185,6 @@ begin
     FFinalized := True;
   end;
 
-  LDestinationOffset := ADestinationOffset;
-  LOutputLength := AOutputLength;
-
   if (FRootHashDigest = Nil) then
   begin
     // Get root digest
@@ -2198,7 +2193,7 @@ begin
       System.Length(FRootHashDigest));
   end;
 
-  while LOutputLength > 0 do
+  while AOutputLength > 0 do
   begin
     if (FDigestPosition and (Blake2BHashSize - 1)) = 0 then
     begin
@@ -2217,9 +2212,9 @@ begin
     LDiff := UInt64(System.Length(FBlake2XBBuffer)) - LBlockOffset;
 
     // Math.Min
-    if LOutputLength < LDiff then
+    if AOutputLength < LDiff then
     begin
-      LCount := LOutputLength
+      LCount := AOutputLength
     end
     else
     begin
@@ -2227,11 +2222,11 @@ begin
     end;
 
     System.Move(FBlake2XBBuffer[LBlockOffset],
-      ADestination[LDestinationOffset], LCount);
+      ADestination[ADestinationOffset], LCount);
 
-    System.Dec(LOutputLength, LCount);
-    System.Inc(LDestinationOffset, LCount);
-    System.Inc(FDigestPosition, UInt64(LCount));
+    System.Dec(AOutputLength, LCount);
+    System.Inc(ADestinationOffset, LCount);
+    System.Inc(FDigestPosition, LCount);
   end;
 end;
 
@@ -2290,7 +2285,7 @@ end;
 constructor TBlake2BMACNotBuildInAdapter.Create(const ABlake2BKey, ASalt,
   APersonalisation: THashLibByteArray; AOutputLengthInBits: Int32);
 var
-  LConfig: TBlake2BConfig;
+  LConfig: IBlake2BConfig;
 begin
   LConfig := TBlake2BConfig.Create(AOutputLengthInBits shr 3);
   LConfig.Key := ABlake2BKey;
